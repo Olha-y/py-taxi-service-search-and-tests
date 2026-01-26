@@ -9,7 +9,10 @@ class PublicAccessTests(TestCase):
     def test_public_access_to_index_page(self):
         url = reverse("taxi:index")
         response = self.client.get(url)
-        self.assertNotEqual(response.status_code, 200)
+        self.assertRedirects(
+            response,
+            f"{reverse("login")}?next={url}"
+        )
 
     def test_public_access_to_manufacturer_list_page(self):
         url = reverse("taxi:manufacturer-list")
@@ -37,7 +40,7 @@ class PrivateAccessTests(TestCase):
         cls.driver = get_user_model().objects.create_user(
             username="user",
             password="password1",
-            license_number="123456",
+            license_number="FTX12345",
         )
 
     def setUp(self):
@@ -131,7 +134,7 @@ class PrivateAccessTests(TestCase):
         other_driver = get_user_model().objects.create_user(
             username="driver1",
             password="password123",
-            license_number="123444",
+            license_number="DRT12344",
         )
 
         url = reverse(

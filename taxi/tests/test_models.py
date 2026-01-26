@@ -19,6 +19,8 @@ class ModelsTest(TestCase):
     def test_driver_string(self):
         driver = get_user_model().objects.create_user(
             username="test username",
+            first_name="test first name",
+            last_name="test last name",
             password="test password"
         )
 
@@ -30,6 +32,8 @@ class ModelsTest(TestCase):
     def test_driver_absolute_url_is_true(self):
         driver = get_user_model().objects.create_user(
             username="test username",
+            first_name="test first name",
+            last_name="test last name",
             password="test password"
         )
         url = reverse("taxi:driver-detail", kwargs={"pk": driver.pk})
