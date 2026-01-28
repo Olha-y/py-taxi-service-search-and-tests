@@ -1,3 +1,5 @@
+from email.mime import audio
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -9,10 +11,7 @@ class PublicAccessTests(TestCase):
     def test_public_access_to_index_page(self):
         url = reverse("taxi:index")
         response = self.client.get(url)
-        self.assertRedirects(
-            response,
-            f"{reverse("login")}?next={url}"
-        )
+        self.assertRedirects(response, f"{reverse('login')}?next={url}")
 
     def test_public_access_to_manufacturer_list_page(self):
         url = reverse("taxi:manufacturer-list")
@@ -195,3 +194,76 @@ class PrivateAccessTests(TestCase):
             response,
             reverse("taxi:car-detail", args=[car.pk])
         )
+
+
+class SearchFormsTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_user(
+            username="driver_02",
+            password="password_driver_1",
+            license_number="DRT1287",
+        )
+
+    def setUp(self):
+        self.client.force_login(self.user)
+
+    def test_search_name_of_manufacturer(self):
+        audi = Manufacturer.objects.create(
+            name="Audi",
+            country="Germany"
+        )
+        tesla = Manufacturer.objects.create(
+            name="Tesla",
+            country="USA"
+        )
+
+        url = reverse("taxi:manufacturer-list")
+        response = self.client.get(url, {"name": "Audi"})
+
+        manufacturers = response.context["manufacturer_list"]
+
+        self.assertIn(audi, manufacturers)
+        self.assertNotIn(tesla, manufacturers)
+
+    def test_search_model_of_car(self):
+        manufacturer = Manufacturer.objects.create(
+            name="Manufacturer",
+            country="USA"
+        )
+
+        q7 = Car.objects.create(
+            model="Q7",
+            manufacturer=manufacturer
+        )
+        model_x = Car.objects.create(
+            model="X",
+            manufacturer=manufacturer
+        )
+
+        url = reverse("taxi:car-list")
+        response = self.client.get(url, {"model": "Q7"})
+        cars = response.context["car_list"]
+
+        self.assertIn(q7, cars)
+        self.assertNotIn(model_x, cars)
+
+    def test_search_username_of_driver(self):
+        driver_1 = get_user_model().objects.create_user(
+            username="driver_01",
+            password="tests12",
+            license_number="DRT1234",
+        )
+        driver_3 = get_user_model().objects.create_user(
+            username="driver_03",
+            password="12tests12",
+            license_number="DFT1234",
+        )
+
+        url = reverse("taxi:driver-list")
+        response = self.client.get(url, {"username": "driver_01"})
+
+        drivers = response.context["driver_list"]
+
+        self.assertIn(driver_1, drivers)
+        self.assertNotIn(driver_3, drivers)
